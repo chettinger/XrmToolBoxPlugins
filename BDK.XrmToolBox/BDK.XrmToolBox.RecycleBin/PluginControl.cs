@@ -174,25 +174,28 @@ namespace BDK.XrmToolBox.RecycleBin
                             RetrieveAuditDetailsRequest auditDetailRequest = new RetrieveAuditDetailsRequest();
                             auditDetailRequest.AuditId = item.Id;
                             RetrieveAuditDetailsResponse response = (RetrieveAuditDetailsResponse)Service.Execute(auditDetailRequest);
-                            AttributeAuditDetail attributeDetail = (AttributeAuditDetail)response.AuditDetail;
-                            EntityMetadata metadata = entityMetadataList.FirstOrDefault(x => (x.ObjectTypeCode == selectedEntity.Item1));
-                            AuditItem auditItem = new Model.AuditItem()
+                            if (response.AuditDetail is AttributeAuditDetail)
                             {
-                                AuditId = item.Id,
-                                DeletedBy = ((EntityReference)item["userid"]).Name,
-                                DeletionDate = (DateTime)item["createdon"],
-                                Entity = ((EntityReference)item["objectid"]).LogicalName,
-                                RecordId = ((EntityReference)item["objectid"]).Id,
-                                AuditDetail = attributeDetail,
-                                Metadata = metadata
-                            };
+                                AttributeAuditDetail attributeDetail = (AttributeAuditDetail)response.AuditDetail;
+                                EntityMetadata metadata = entityMetadataList.FirstOrDefault(x => (x.ObjectTypeCode == selectedEntity.Item1));
+                                AuditItem auditItem = new Model.AuditItem()
+                                {
+                                    AuditId = item.Id,
+                                    DeletedBy = ((EntityReference)item["userid"]).Name,
+                                    DeletionDate = (DateTime)item["createdon"],
+                                    Entity = ((EntityReference)item["objectid"]).LogicalName,
+                                    RecordId = ((EntityReference)item["objectid"]).Id,
+                                    AuditDetail = attributeDetail,
+                                    Metadata = metadata
+                                };
 
-                            if (selectedEntity.Item3!=null && attributeDetail.OldValue.Contains(selectedEntity.Item3))
-                            {
-                                auditItem.Name = attributeDetail.OldValue[selectedEntity.Item3].ToString();
+                                if (selectedEntity.Item3 != null && attributeDetail.OldValue.Contains(selectedEntity.Item3))
+                                {
+                                    auditItem.Name = attributeDetail.OldValue[selectedEntity.Item3].ToString();
+                                }
+
+                                data.Add(auditItem);
                             }
-
-                            data.Add(auditItem);
                         }
 
                         ev.Result = data.OrderByDescending(x => x.DeletionDate).ToList();
